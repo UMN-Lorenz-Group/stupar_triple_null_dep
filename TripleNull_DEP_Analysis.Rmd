@@ -11,14 +11,18 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,root.dir = "C:/Users/ivanv/Desktop/UMN_Projects/Ritesh_DESeq_Analysis/TripleNullMutant_Paper_DEP/ProteinQuant/")
+
 ```
 
 # Introduction
-This document outlines the workflow for differential enrichment analysis of Mass Spectrometer (MS) proteomics data using the **DEP** package in R. Two comparisons are analyzed:
+This document outlines the workflow for differential enrichment analysis of Mass Spectrometer (MS) proteomics data using the **DEP** package in R. Three comparisons are analyzed:
 
 1. **MO vs. TNB**
 2. **Bert vs. TN (CRISPR)**
+3. **Bert vs. TN1 (CRISPR)** & **Bert vs. TN2 (CRISPR)**
+
+For the second comparison , TN lines WPT673.7.8.8 & WPT673.7.12.5 are considered the same TN line with 4 replicates for comparison with Bert. Whereas for comparison 3, TN lines WPT673.7.8.8 & WPT673.7.12.5 are considered as distinct with 2 replicates each for comparison with Bert.
 
 # Objective
 
@@ -38,17 +42,13 @@ library(ggrepel)
 
 ```
 
-### Set Working Directory
-
-```{r set-wd}
-setwd("C:/Users/ivanv/Desktop/UMN_Projects/Ritesh_DESeq_Analysis/TripleNullMutant_Paper_DEP/ProteinQuant/")
-```
-
 ### **Analysis: MO vs. TNB**
 
 ### Load Data: Import MS2 protein level data for the samples generated using Spectronaut analysis from '.csv' files 
 
 ```{r load-data-mo-tnb}
+
+setwd("C:/Users/ivanv/Desktop/UMN_Projects/Ritesh_DESeq_Analysis/TripleNullMutant_Paper_DEP/ProteinQuant/")
 
 PrtnQuant <- read.csv("Supplemental table X1 Breeding lines TN .csv", header=TRUE)
 dim(PrtnQuant)
@@ -59,6 +59,9 @@ dim(PrtnQuant)
 ### Load Data:  Import MS2 protein level data for the samples generated using Spectronaut analysis from '.csv' files 
 
 ```{r load-data-bert-tn}
+
+setwd("C:/Users/ivanv/Desktop/UMN_Projects/Ritesh_DESeq_Analysis/TripleNullMutant_Paper_DEP/ProteinQuant/")
+
 PrtnQuant2 <- read.csv("Supplemental table X2 CRISPR TN .csv", header=TRUE)
 dim(PrtnQuant2)
 
@@ -166,11 +169,7 @@ colnames(PrtnQuant2_Filt)[1] <- "ID"
 colnames(PrtnQuant2_Filt)[2:5] <- gsub("Biological.", "", colnames(PrtnQuant2_Filt)[2:5])
 colnames(PrtnQuant2_Filt)[2:5] <- gsub("\\..Control.*.", "", colnames(PrtnQuant2_Filt)[2:5])
 
-sample_anno2 <- data.frame(
-  label = colnames(PrtnQuant2_Filt)[2:9],
-  condition = c("WT", "WT", "WT", "WT", "TN", "TN", "TN", "TN"),
-  replicate = c(1,2,3,4,1,2,3,4)
-)
+
 
 
 PrtnQuant2_Filt <- make_unique(PrtnQuant2_Filt,names="ID",ids="ID")
@@ -179,39 +178,46 @@ for(i in 2:9){
 } 
 
 
+```
+
+#### Create Summarized Experiment Object IIa
+
+```{r sampleAnno2a}
+
+sample_anno2a <- data.frame(
+  label = colnames(PrtnQuant2_Filt)[2:9],
+  condition = c("WT", "WT", "WT", "WT", "TN", "TN", "TN", "TN"),
+  replicate = c(1,2,3,4,1,2,3,4)
+)
+
+```
+
+
+```{r create-se-bert-tn-a}
+data_se2a <- make_se(proteins_unique = PrtnQuant2_Filt, columns = c(2:9), expdesign = sample_anno2a)
 
 
 ```
 
-### Create Summarized Experiment Object
 
-```{r create-se-bert-tn}
-data_se2 <- make_se(proteins_unique = PrtnQuant2_Filt, columns = c(2:9), expdesign = sample_anno2)
+### Data quality checks 2a
 
+```{r qualityChecks_bert_vs_tn_a }
 
-
-```
-
-### Data quality checks
-
-```{r qualityChecks_bert_vs_tn }
-
-plot_frequency(data_se2)
-plot_numbers(data_se2)
-
-
-
+plot_frequency(data_se2a)
+plot_numbers(data_se2a)
 
 ```
 
-### Normalization
 
-```{r normalize_bert_vs_tn}
+### Normalization 2a
 
-data_se_norm2 <- normalize_vsn(data_se2)
-meanSdPlot(data_se_norm2)
+```{r normalize_bert_vs_tn_a}
 
-plot_normalization(data_se2, data_se_norm2)
+data_se_norm2a <- normalize_vsn(data_se2a)
+meanSdPlot(data_se_norm2a)
+
+plot_normalization(data_se2a, data_se_norm2a)
 
 ```
 
@@ -219,39 +225,134 @@ plot_normalization(data_se2, data_se_norm2)
 ### Filtering
 ```{r filter_bert_vs_tn}
 
-data_se_norm_filt2 <- filter_missval(data_se_norm2, thr = 0.5)
-meanSdPlot(data_se_norm_filt2)
+data_se_norm_filt2a <- filter_missval(data_se_norm2a, thr = 0.5)
+meanSdPlot(data_se_norm_filt2a)
 
 
 ```
 ### Impute missing values
 
-```{r plot_filter_bert_vs_tn}
+```{r plot_filter_bert_vs_tn_a}
 
 
 ### 
-plot_missval(data_se_norm2)
-plot_detect(data_se_norm2)
+plot_missval(data_se_norm2a)
+plot_detect(data_se_norm2a)
 
 ###
 
-plot_missval(data_se_norm_filt2)
-plot_detect(data_se_norm_filt2)
+plot_missval(data_se_norm_filt2a)
+plot_detect(data_se_norm_filt2a)
 
 
 ```
 
-### Imputation 
-```{r impute_bert_vs_tn}
-
-#For missing at random ('MAR') data a Knn or MLE
+### Imputation II a
+```{r impute_bert_vs_tn_a}
 
 # For missing not at random ('MNAR'),MinProb (QRILC)
-# data_se_norm_imp0 <- impute(data_se_norm_filt2, fun = "MinProb", q = 0.01)
 
-data_se_norm_imp2 <- impute(data_se_norm_filt2, fun = "knn", rowmax=0.9)
+ data_se_norm_imp2a <- impute(data_se_norm_filt2a, fun = "MinProb", q = 0.01)
 
-plot_imputation(data_se_norm_imp2)
+
+
+# For missing at random ('MAR') data a Knn or MLE
+
+# data_se_norm_imp2a <- impute(data_se_norm_filt2a, fun = "knn", rowmax=0.9)
+
+ plot_imputation(data_se_norm_imp2a)
+
+```
+
+
+## Data Preprocessing for Bert vs Crispr TN1 and Bert vs Crispr TN2
+
+#### Create Summarized Experiment Object IIb
+```{r sampleAnno2b}
+
+sample_anno2b <- data.frame(
+  label = colnames(PrtnQuant2_Filt)[2:9],
+  condition = c("WT", "WT", "WT", "WT", "TN1", "TN1", "TN2", "TN2"),
+  replicate = c(1,2,3,4,1,2,1,2)
+)
+
+```
+
+
+### Create Summarized Experiment Object II b
+
+```{r create-se-bert-tn-b}
+
+
+data_se2b <- make_se(proteins_unique = PrtnQuant2_Filt, columns = c(2:9), expdesign = sample_anno2b)
+
+
+```
+
+
+
+### Data quality checks 2b
+
+```{r qualityChecks_bert_vs_tn_b }
+
+plot_frequency(data_se2b)
+plot_numbers(data_se2b)
+
+```
+
+
+
+### Normalization 2b
+
+```{r normalize_bert_vs_tn_b}
+
+data_se_norm2b <- normalize_vsn(data_se2b)
+meanSdPlot(data_se_norm2b)
+
+plot_normalization(data_se2b, data_se_norm2b)
+
+```
+
+
+### Filtering 2b
+```{r filter_bert_vs_tn_b}
+
+data_se_norm_filt2b <- filter_missval(data_se_norm2b, thr = 0.5)
+meanSdPlot(data_se_norm_filt2b)
+
+
+```
+
+### Impute missing values 2b
+
+```{r plot_filter_bert_vs_tn_b}
+
+
+### 
+plot_missval(data_se_norm2b)
+plot_detect(data_se_norm2b)
+
+###
+
+plot_missval(data_se_norm_filt2b)
+plot_detect(data_se_norm_filt2b)
+
+
+```
+
+
+### Imputation II b
+```{r impute_bert_vs_tn_b}
+
+# For missing not at random ('MNAR'),MinProb (QRILC)
+
+ data_se_norm_imp2b <- impute(data_se_norm_filt2b, fun = "MinProb", q = 0.01)
+
+# For missing at random ('MAR') data a Knn or MLE
+
+# data_se_norm_imp2b <- impute(data_se_norm_filt2b, fun = "knn", rowmax=0.9)
+
+ plot_imputation(data_se_norm_imp2b)
 
 ```
 
@@ -286,23 +387,49 @@ plot_pca(dep1, x = 1, y = 2, label = TRUE, n = 500)
 ```
 
 
-## DEP Analysis for bert_vs_tn lines
+## DEP Analysis for bert_vs_tn 
 
-```{r diff-analysis-bert-tn}
-data_diff2 <- test_diff(data_se_norm_imp2, type = "control", control = "WT")
-dep2 <- add_rejections(data_diff2, alpha = 0.05, lfc = 1)
+```{r diff-analysis-bert-tn_a}
+
+data_diff2a <- test_diff(data_se_norm_imp2a, type = "control", control = "WT")
+dep2a <- add_rejections(data_diff2a, alpha = 0.05, lfc = 1)
+
 ```
 
 ### Heatmap for bert_vs_tn analysis
 
-```{r heatmap-bert-tn}
-plot_heatmap(dep2, type = "centered", kmeans = TRUE, k = 6, col_limit = 4)
+```{r heatmap-bert-tn_a}
+
+plot_heatmap(dep2a, type = "centered", kmeans = TRUE, k = 6, col_limit = 4)
 ```
 
 ### PCA plot for bert_vs_tn analysis
 
-```{r pca-bert-tn}
-plot_pca(dep2, x = 1, y = 2, label = TRUE, n = 500)
+```{r pca-bert-tn_a}
+
+plot_pca(dep2a, x = 1, y = 2, label = TRUE, n = 500)
+```
+
+## DEP Analysis for bert_vs_tn1 and bert_vs_tn2
+
+```{r diff-analysis-bert-tn_b}
+
+data_diff2b <- test_diff(data_se_norm_imp2b, type = "control", control = "WT")
+dep2b <- add_rejections(data_diff2b, alpha = 0.05, lfc = 1)
+
+```
+
+### Heatmap for bert_vs_tn analysis II
+
+```{r heatmap-bert-tn_b}
+
+plot_heatmap(dep2b, type = "centered", kmeans = TRUE, k = 6, col_limit = 4)
+```
+
+### PCA plot for bert_vs_tn analysis II
+
+```{r pca-bert-tn_b}
+plot_pca(dep2b, x = 1, y = 2, label = TRUE, n = 500)
 ```
 
 
@@ -376,12 +503,12 @@ plot_single(dep1,proteins="Glyma.08G116300",type="centered")
 ```
 
 
-### Volcano plot for bert_vs_tn lines
+### Volcano plot for bert_vs_tn lines 
 
 ```{r volcano-bert-tn}
 
 # Volcano plot
-pVol2 <- plot_volcano(dep2,contrast='TN_vs_WT',label_size=2,adjusted = TRUE, add_names = TRUE)
+pVol2 <- plot_volcano(dep2a,contrast='TN_vs_WT',label_size=2,adjusted = TRUE, add_names = TRUE)
 
 # Extract data from the plot object
 volcano_data2 <- pVol2$data
@@ -421,9 +548,8 @@ pVol2 <- ggplot(volcano_data2, aes(x = x, y = y, color = DE)) +
 # Display the volcano plot
 print(pVol2)
 
-#png("prtnquant-volcanoplot_V2_MO_vs_TNB.png", 1200, 1000, pointsize=20)
 # Save the customized plot
-ggsave("prtnquant-volcanoplot_V2_Bert_vs_TN.png", plot = pVol2, width = 10, height = 8)
+ggsave("prtnquant-volcanoplot_V2_Bert_vs_TN1.png", plot = pVol2, width = 10, height = 8)
 
 ###
 
@@ -432,16 +558,119 @@ ggsave("prtnquant-volcanoplot_V2_Bert_vs_TN.png", plot = pVol2, width = 10, heig
 #### Mutant Proteins LE (Glyma.02G012600), KTi3 (Glyma.08G341500), and P34 (Glyma.08G116300) genes in Bert_vs_CrisprTN comparison
 
 ```{r singlePlots_bert_vs_tn}
-plot_single(dep2,proteins="Glyma.02G012600",type="centered")
+plot_single(dep2a,proteins="Glyma.02G012600",type="centered")
 
-plot_single(dep2,proteins="Glyma.08G341500",type="centered")
+plot_single(dep2a,proteins="Glyma.08G341500",type="centered")
 
-plot_single(dep2,proteins="Glyma.08G116300",type="centered")
+plot_single(dep2a,proteins="Glyma.08G116300",type="centered")
 
 ```
 
+
+### Volcano plot for bert_vs_tn1 and bert_vs_tn2
+
+```{r volcano-bert-tn-2b}
+
+# Volcano plot
+
+pVol2b <- plot_volcano(dep2b,contrast='TN1_vs_WT',label_size=2,adjusted = TRUE, add_names = TRUE)
+
+# Extract data from the plot object
+volcano_data2b <- pVol2b$data
+
+# Add a new column for DE categories based on x and significance
+volcano_data2b$DE <- with(volcano_data2b, 
+                        ifelse(significant & x > 0, "Up", 
+                               ifelse(significant & x < 0, "Down", "NS"))
+)
+
+# Convert DE column to a factor for consistent plotting
+volcano_data2b$DE <- factor(volcano_data2b$DE, levels = c("Up", "Down", "NS"))
+
+# Create the volcano plot with new DE column
+pVol2b <- ggplot(volcano_data2b, aes(x = x, y = y, color = DE)) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = c(
+      "Up" = "red",         # Upregulated proteins
+      "Down" = "blue",      # Downregulated proteins
+      "NS" = "gray"         # Non-significant proteins
+    )
+  ) +
+  geom_text_repel(
+    aes(label = ifelse(DE != "NS", name, "")), # Label significant points (Up or Down)
+    max.overlaps = 50,
+    size = 3
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Volcano Plot of DEP for Bert_vs_TN1",
+    x = "Log2 Fold Change",
+    y = "-Log10 Adjusted P-value",
+    color = "Expression"
+  )
+
+# Display the volcano plot
+print(pVol2b)
+
+# Save the customized plot
+ggsave("prtnquant-volcanoplot_V2_Bert_vs_TN1.png", plot = pVol2b, width = 10, height = 8)
+
+###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### ###### 
+###### 'TN2_vs_WT'
+
+pVol2c <- plot_volcano(dep2b,contrast='TN2_vs_WT',label_size=2,adjusted = TRUE, add_names = TRUE)
+
+
+# Extract data from the plot object
+volcano_data2c <- pVol2c$data
+
+# Add a new column for DE categories based on x and significance
+volcano_data2c$DE <- with(volcano_data2c, 
+                        ifelse(significant & x > 0, "Up", 
+                               ifelse(significant & x < 0, "Down", "NS"))
+)
+
+# Convert DE column to a factor for consistent plotting
+volcano_data2c$DE <- factor(volcano_data2c$DE, levels = c("Up", "Down", "NS"))
+
+# Create the volcano plot with new DE column
+pVol2c <- ggplot(volcano_data2c, aes(x = x, y = y, color = DE)) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = c(
+      "Up" = "red",         # Upregulated proteins
+      "Down" = "blue",      # Downregulated proteins
+      "NS" = "gray"         # Non-significant proteins
+    )
+  ) +
+  geom_text_repel(
+    aes(label = ifelse(DE != "NS", name, "")), # Label significant points (Up or Down)
+    max.overlaps = 50,
+    size = 3
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Volcano Plot of DEP for Bert_vs_TN2",
+    x = "Log2 Fold Change",
+    y = "-Log10 Adjusted P-value",
+    color = "Expression"
+  )
+
+
+
+print(pVol2c)
+
+# Save the customized plot
+ggsave("prtnquant-volcanoplot_V2_Bert_vs_TN2.png", plot = pVol2c, width = 10, height = 8)
+
+###
+
+```
+
+
 # Conclusion
-The proteins Glyma.02G012600, Glyma.08G341500, and  Glyma.08G116300, which are the target proteins in the triple null mutant and CRISPR mutant lines, are significantly down-regulated in both the comparisons with the respective controls. Further analysis of other differentially expressed proteins will be performed as part of future studies. 
+The proteins Glyma.02G012600, Glyma.08G341500, and  Glyma.08G116300, which are the target proteins in the triple null mutant and CRISPR mutant lines, are significantly down-regulated in all three comparisons with their respective controls. Further analysis of other differentially expressed proteins will be performed as part of future studies. 
 
 
 ```{r End}
